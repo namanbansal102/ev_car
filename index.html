@@ -1085,6 +1085,9 @@
         function updateUI(data) {
             lastData = data;
             
+            // Check for alert conditions and maintain alert state
+            checkAndUpdateAlertState(data);
+            
             // Update battery
             const batteryPercentage = document.getElementById('battery-percentage');
             const batteryPercentageSmall = document.getElementById('battery-percentage-small');
@@ -1129,68 +1132,6 @@
             if (tempChart && tempChart.data) {
                 tempChart.data.datasets[0].data = tempHistory;
                 tempChart.update();
-            }
-            
-            // Update gas detection
-            const gasCard = document.getElementById('gas-card');
-            const gasStatus = document.getElementById('gas-status');
-            const gasStatusSmall = document.getElementById('gas-status-small');
-            const gasDot = document.getElementById('gas-dot');
-            const gasIndicator = document.getElementById('gas-indicator');
-            
-            if (gasCard && gasStatus && gasStatusSmall && gasDot) {
-                if (data.gasDetected) {
-                    gasCard.classList.add('alert-pulse');
-                    gasCard.classList.remove('neon-pulse');
-                    gasStatus.className = 'text-2xl font-bold text-red-500 mt-2 orbitron glitch';
-                    gasStatus.setAttribute('data-text', 'Gas Detected!');
-                    gasStatus.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span>Gas Detected!</span>';
-                    gasStatusSmall.className = 'text-xl font-bold text-red-500';
-                    gasStatusSmall.textContent = 'ALERT';
-                    gasDot.classList.add('active');
-                    if (gasIndicator) gasIndicator.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.7)';
-                } else {
-                    gasCard.classList.remove('alert-pulse');
-                    gasCard.classList.add('neon-pulse');
-                    gasStatus.className = 'text-2xl font-bold text-green-500 mt-2 neon-text-sm orbitron';
-                    gasStatus.removeAttribute('data-text');
-                    gasStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span>No Gas Detected</span>';
-                    gasStatusSmall.className = 'text-xl font-bold text-green-500';
-                    gasStatusSmall.textContent = 'OK';
-                    gasDot.classList.remove('active');
-                    if (gasIndicator) gasIndicator.style.boxShadow = '0 0 5px rgba(57, 255, 20, 0.5)';
-                }
-            }
-            
-            // Update fire detection
-            const fireCard = document.getElementById('fire-card');
-            const fireStatus = document.getElementById('fire-status');
-            const fireStatusSmall = document.getElementById('fire-status-small');
-            const fireDot = document.getElementById('fire-dot');
-            const fireIndicator = document.getElementById('fire-indicator');
-            
-            if (fireCard && fireStatus && fireStatusSmall && fireDot) {
-                if (data.fireDetected) {
-                    fireCard.classList.add('alert-pulse');
-                    fireCard.classList.remove('neon-pulse');
-                    fireStatus.className = 'text-2xl font-bold text-red-500 mt-2 orbitron glitch';
-                    fireStatus.setAttribute('data-text', 'Fire Detected!');
-                    fireStatus.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span>Fire Detected!</span>';
-                    fireStatusSmall.className = 'text-xl font-bold text-red-500';
-                    fireStatusSmall.textContent = 'ALERT';
-                    fireDot.classList.add('active');
-                    if (fireIndicator) fireIndicator.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.7)';
-                } else {
-                    fireCard.classList.remove('alert-pulse');
-                    fireCard.classList.add('neon-pulse');
-                    fireStatus.className = 'text-2xl font-bold text-green-500 mt-2 neon-text-sm orbitron';
-                    fireStatus.removeAttribute('data-text');
-                    fireStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span>No Fire Detected</span>';
-                    fireStatusSmall.className = 'text-xl font-bold text-green-500';
-                    fireStatusSmall.textContent = 'OK';
-                    fireDot.classList.remove('active');
-                    if (fireIndicator) fireIndicator.style.boxShadow = '0 0 5px rgba(57, 255, 20, 0.5)';
-                }
             }
             
             // Update location
@@ -1239,21 +1180,321 @@
             }
         }
         
-        // Helper function to update sensor status
-        function updateSensorStatus(id, text, className) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = text;
-                element.className = className;
+        // Alert state tracking variables
+        let alertStates = {
+            temperature: { active: false, until: 0 },
+            gas: { active: false, until: 0 },
+            fire: { active: false, until: 0 }
+        };
+        
+        // Function to check alert conditions and update alert state
+        function checkAndUpdateAlertState(data) {
+            const now = Date.now();
+            const ALERT_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+            
+            // Check high temperature
+            if (data.temperature > 50) {
+                alertStates.temperature.active = true;
+                alertStates.temperature.until = now + ALERT_DURATION;
+            } else if (alertStates.temperature.active && now > alertStates.temperature.until) {
+                alertStates.temperature.active = false;
+            }
+            
+            // Check gas detection
+            if (data.gasDetected) {
+                alertStates.gas.active = true;
+                alertStates.gas.until = now + ALERT_DURATION;
+            } else if (alertStates.gas.active && now > alertStates.gas.until) {
+                alertStates.gas.active = false;
+            }
+            
+            // Check fire detection
+            if (data.fireDetected) {
+                alertStates.fire.active = true;
+                alertStates.fire.until = now + ALERT_DURATION;
+            } else if (alertStates.fire.active && now > alertStates.fire.until) {
+                alertStates.fire.active = false;
+            }
+            
+            // Apply alert states to UI components
+            applyAlertStates(data);
+        }
+        
+        // Function to apply alert states to UI
+        function applyAlertStates(data) {
+            // Override the actual data with the persisted alert states
+            const effectiveData = {
+                ...data,
+                temperature: data.temperature,
+                gasDetected: data.gasDetected || alertStates.gas.active,
+                fireDetected: data.fireDetected || alertStates.fire.active
+            };
+            
+            // Display high temperature warning if in alert state
+            if (alertStates.temperature.active && data.temperature <= 50) {
+                const tempElement = document.getElementById('temperature');
+                const tempSmall = document.getElementById('temperature-small');
+                const tempDot = document.getElementById('temp-dot');
+                
+                if (tempElement) {
+                    tempElement.innerHTML = `<span class="text-red-500">${data.temperature}</span>`;
+                    tempElement.setAttribute('title', 'High temperature detected recently');
+                }
+                
+                if (tempSmall) {
+                    tempSmall.innerHTML = `<span class="text-red-500">${data.temperature}</span>`;
+                }
+                
+                if (tempDot) {
+                    tempDot.classList.add('active');
+                }
+                
+                // Add a warning badge
+                addOrUpdateAlertBadge('temperature', 'High temperature detected recently');
+            } else if (!alertStates.temperature.active) {
+                removeAlertBadge('temperature');
+            }
+            
+            // Update gas indicators based on effective data
+            updateGasIndicators(effectiveData.gasDetected);
+            
+            // Update fire indicators based on effective data
+            updateFireIndicators(effectiveData.fireDetected);
+            
+            // Update header with alert status
+            updateHeaderAlertStatus();
+        }
+        
+        // Function to update gas indicators
+        function updateGasIndicators(gasDetected) {
+            const gasCard = document.getElementById('gas-card');
+            const gasStatus = document.getElementById('gas-status');
+            const gasStatusSmall = document.getElementById('gas-status-small');
+            const gasDot = document.getElementById('gas-dot');
+            const gasIndicator = document.getElementById('gas-indicator');
+            
+            if (gasCard && gasStatus && gasStatusSmall && gasDot) {
+                if (gasDetected) {
+                    gasCard.classList.add('alert-pulse');
+                    gasCard.classList.remove('neon-pulse');
+                    gasStatus.className = 'text-2xl font-bold text-red-500 mt-2 orbitron glitch';
+                    gasStatus.setAttribute('data-text', 'Gas Detected!');
+                    gasStatus.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span>Gas Detected!</span>';
+                    gasStatusSmall.className = 'text-xl font-bold text-red-500';
+                    gasStatusSmall.textContent = 'ALERT';
+                    gasDot.classList.add('active');
+                    if (gasIndicator) gasIndicator.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.7)';
+                    
+                    // Add alert badge
+                    addOrUpdateAlertBadge('gas', 'Gas leak detected recently');
+                } else {
+                    gasCard.classList.remove('alert-pulse');
+                    gasCard.classList.add('neon-pulse');
+                    gasStatus.className = 'text-2xl font-bold text-green-500 mt-2 neon-text-sm orbitron';
+                    gasStatus.removeAttribute('data-text');
+                    gasStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span>No Gas Detected</span>';
+                    gasStatusSmall.className = 'text-xl font-bold text-green-500';
+                    gasStatusSmall.textContent = 'OK';
+                    gasDot.classList.remove('active');
+                    if (gasIndicator) gasIndicator.style.boxShadow = '0 0 5px rgba(57, 255, 20, 0.5)';
+                    
+                    // Remove alert badge
+                    removeAlertBadge('gas');
+                }
             }
         }
         
-        // Helper function to update sensor values
-        function updateSensorValue(id, text) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = text;
+        // Function to update fire indicators
+        function updateFireIndicators(fireDetected) {
+            const fireCard = document.getElementById('fire-card');
+            const fireStatus = document.getElementById('fire-status');
+            const fireStatusSmall = document.getElementById('fire-status-small');
+            const fireDot = document.getElementById('fire-dot');
+            const fireIndicator = document.getElementById('fire-indicator');
+            
+            if (fireCard && fireStatus && fireStatusSmall && fireDot) {
+                if (fireDetected) {
+                    fireCard.classList.add('alert-pulse');
+                    fireCard.classList.remove('neon-pulse');
+                    fireStatus.className = 'text-2xl font-bold text-red-500 mt-2 orbitron glitch';
+                    fireStatus.setAttribute('data-text', 'Fire Detected!');
+                    fireStatus.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span>Fire Detected!</span>';
+                    fireStatusSmall.className = 'text-xl font-bold text-red-500';
+                    fireStatusSmall.textContent = 'ALERT';
+                    fireDot.classList.add('active');
+                    if (fireIndicator) fireIndicator.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.7)';
+                    
+                    // Add alert badge
+                    addOrUpdateAlertBadge('fire', 'Fire detected recently');
+                } else {
+                    fireCard.classList.remove('alert-pulse');
+                    fireCard.classList.add('neon-pulse');
+                    fireStatus.className = 'text-2xl font-bold text-green-500 mt-2 neon-text-sm orbitron';
+                    fireStatus.removeAttribute('data-text');
+                    fireStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span>No Fire Detected</span>';
+                    fireStatusSmall.className = 'text-xl font-bold text-green-500';
+                    fireStatusSmall.textContent = 'OK';
+                    fireDot.classList.remove('active');
+                    if (fireIndicator) fireIndicator.style.boxShadow = '0 0 5px rgba(57, 255, 20, 0.5)';
+                    
+                    // Remove alert badge
+                    removeAlertBadge('fire');
+                }
             }
+        }
+        
+        // Function to add or update alert badge
+        function addOrUpdateAlertBadge(type, message) {
+            const id = `alert-badge-${type}`;
+            let badge = document.getElementById(id);
+            
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.id = id;
+                badge.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-900 text-white py-2 px-4 rounded-lg shadow-lg z-50 flex items-center';
+                badge.style.opacity = '0';
+                badge.style.transition = 'opacity 0.5s ease';
+                
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-exclamation-triangle mr-2';
+                badge.appendChild(icon);
+                
+                const text = document.createElement('span');
+                text.className = 'message';
+                text.textContent = message;
+                badge.appendChild(text);
+                
+                const countdown = document.createElement('span');
+                countdown.className = 'ml-2 countdown text-xs bg-red-700 px-2 py-1 rounded';
+                badge.appendChild(countdown);
+                
+                document.body.appendChild(badge);
+                
+                // Apply a stagger to multiple alerts
+                const alerts = document.querySelectorAll('[id^="alert-badge-"]');
+                const alertCount = alerts.length;
+                badge.style.top = `${(alertCount * 3) + 1}rem`;
+                
+                // Fade in
+                setTimeout(() => {
+                    badge.style.opacity = '1';
+                }, 10);
+            } else {
+                badge.querySelector('.message').textContent = message;
+            }
+            
+            // Update countdown
+            startCountdown(type);
+        }
+        
+        // Function to remove alert badge
+        function removeAlertBadge(type) {
+            const badge = document.getElementById(`alert-badge-${type}`);
+            if (badge) {
+                badge.style.opacity = '0';
+                setTimeout(() => {
+                    badge.remove();
+                    // Reposition remaining badges
+                    const alerts = document.querySelectorAll('[id^="alert-badge-"]');
+                    alerts.forEach((alert, index) => {
+                        alert.style.top = `${(index * 3) + 1}rem`;
+                    });
+                }, 500);
+            }
+        }
+        
+        // Function to start countdown on alert badge
+        function startCountdown(type) {
+            const badge = document.getElementById(`alert-badge-${type}`);
+            if (!badge) return;
+            
+            const countdownEl = badge.querySelector('.countdown');
+            if (!countdownEl) return;
+            
+            // Clear any existing intervals
+            if (badge.countdownInterval) {
+                clearInterval(badge.countdownInterval);
+            }
+            
+            // Update countdown every second
+            badge.countdownInterval = setInterval(() => {
+                const timeLeft = Math.ceil((alertStates[type].until - Date.now()) / 1000);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(badge.countdownInterval);
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        // Function to update header alert status
+        function updateHeaderAlertStatus() {
+            const hasActiveAlert = Object.values(alertStates).some(state => state.active);
+            const headerElement = document.querySelector('header');
+            
+            if (hasActiveAlert && headerElement) {
+                if (!headerElement.classList.contains('alert-mode')) {
+                    headerElement.classList.add('alert-mode');
+                    
+                    // Create alert banner if it doesn't exist
+                    if (!document.getElementById('alert-banner')) {
+                        const banner = document.createElement('div');
+                        banner.id = 'alert-banner';
+                        banner.className = 'bg-red-900 text-white py-2 px-4 rounded-lg mt-2 flex items-center justify-between animate-pulse';
+                        banner.innerHTML = `
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <span>ALERT MODE: Vehicle in danger! Some alerts may have been resolved but system remains in alert state.</span>
+                            </div>
+                            <div id="alert-time-remaining" class="text-xs bg-red-700 px-2 py-1 rounded"></div>
+                        `;
+                        headerElement.appendChild(banner);
+                    }
+                    
+                    // Update alert time remaining
+                    updateAlertTimeRemaining();
+                }
+            } else if (headerElement && headerElement.classList.contains('alert-mode')) {
+                headerElement.classList.remove('alert-mode');
+                const banner = document.getElementById('alert-banner');
+                if (banner) {
+                    banner.remove();
+                }
+            }
+        }
+        
+        // Function to update alert time remaining
+        function updateAlertTimeRemaining() {
+            const timeEl = document.getElementById('alert-time-remaining');
+            if (!timeEl) return;
+            
+            // Find the latest alert end time
+            const latestEndTime = Math.max(
+                ...Object.values(alertStates)
+                    .filter(state => state.active)
+                    .map(state => state.until)
+            );
+            
+            // Update the time remaining
+            const updateTime = () => {
+                const timeLeft = Math.ceil((latestEndTime - Date.now()) / 1000);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeEl.textContent = `Alert mode ends in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+            
+            updateTime();
+            const interval = setInterval(updateTime, 1000);
         }
 
         // Function to fetch data from NodeMCU
@@ -1282,6 +1523,9 @@
 
         updateUI(data);
 
+        // Check for alert conditions and send email notification if needed
+        checkAlertConditions(data);
+
         // Reset offline status
         document.querySelectorAll('.offline-indicator').forEach(el => {
             if (el) el.style.display = 'none';
@@ -1303,6 +1547,83 @@
     }
 }
 
+        // Function to check alert conditions and send email if needed
+        let lastAlertTime = 0;
+        const ALERT_COOLDOWN = 300000; // 5 minutes cooldown between alerts
+        
+        function checkAlertConditions(data) {
+            const now = Date.now();
+            
+            // Check if any alert condition is met
+            const highTemp = data.temperature > 50;
+            const alertConditionMet = highTemp || data.gasDetected || data.fireDetected;
+            
+            // If alert condition is met and cooldown period has passed
+            if (alertConditionMet && (now - lastAlertTime > ALERT_COOLDOWN)) {
+                lastAlertTime = now;
+                
+                // Prepare alert data
+                const alertData = {
+                    email: "nitishmehan0608@gmail.com",
+                    battery: data.battery,
+                    temperature: data.temperature,
+                    gasDetected: data.gasDetected,
+                    fireDetected: data.fireDetected,
+                    latitude: data.latitude,
+                    longitude: data.longitude
+                };
+                
+                // Send alert notification
+                sendAlertNotification(alertData);
+            }
+        }
+        
+        // Function to send alert notification via POST request
+        async function sendAlertNotification(data) {
+            // The URL to your alert notification service
+            const alertUrl = "https://send-chitkara.vercel.app/api/evCar";
+            
+            try {
+                const response = await fetch(alertUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log("Alert notification sent successfully");
+                    showAlertSentNotification();
+                } else {
+                    console.error("Failed to send alert notification:", await response.text());
+                }
+            } catch (error) {
+                console.error("Error sending alert notification:", error);
+            }
+        }
+        
+        // Function to show a notification that alert was sent
+        function showAlertSentNotification() {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-900 text-white p-4 rounded-lg shadow-lg z-50 animate-pulse';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-bell mr-2"></i>
+                    <span>Alert notification sent</span>
+                </div>
+            `;
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => notification.remove(), 500);
+            }, 5000);
+        }
 
         // Function to show offline status with null checks
         function showOfflineStatus() {
