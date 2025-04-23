@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Alert Notification</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #121212;
+        }
+
+        .alert-header {
+            background-color: #ff0000;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .alert-info {
+            background-color: #1a1a1a;
+            border: 1px solid #ff0000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+
+        .alert-detail {
+            margin: 10px 0;
+            color: #ffffff;
+        }
+
+        .map-container {
+            height: 300px;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            margin: 20px 0;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+        }
+
+        #map {
+            height: 100%;
+            border-radius: 5px;
+            filter: grayscale(90%) invert(100%);
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #cccccc;
+            margin-top: 20px;
+            border-top: 1px solid #ff0000;
+            padding-top: 20px;
+        }
+
+        h3 {
+            color: #ff0000;
+            border-bottom: 1px solid #ff0000;
+            padding-bottom: 5px;
+        }
+
+        .alert-detail strong {
+            color: #ff0000;
+        }
+
+        .danger-alert {
+            background-color: rgba(255, 0, 0, 0.1);
+            border-left: 4px solid #ff0000;
+            padding: 10px;
+            margin: 5px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="alert-header">
+        <h2 style="margin: 0;">⚠️ Vehicle Alert Notification</h2>
+    </div>
+
+    <div class="alert-info">
+        <div class="alert-detail">
+            <strong>Alert Type:</strong> <span id="alertType">Multiple Alerts Detected</span>
+        </div>
+        <div class="alert-detail">
+            <strong>Vehicle ID:</strong> CAR-IOT-001
+        </div>
+        <div class="alert-detail">
+            <strong>Time:</strong> <span id="alertTime">[TIME]</span>
+        </div>
+    </div>
+
+    <div class="alert-info">
+        <h3>Alert Details:</h3>
+        <div class="alert-detail danger-alert" id="temperatureAlert">
+            🌡️ High Temperature: <span id="tempValue">56</span>°C
+        </div>
+        <div class="alert-detail danger-alert" id="gasAlert">
+            💨 Gas Leak Detected
+        </div>
+        <div class="alert-detail danger-alert" id="fireAlert">
+            🔥 Fire Detected
+        </div>
+    </div>
+
+    <div class="alert-info">
+        <h3>Vehicle Location:</h3>
+        <div class="alert-detail">
+            <strong>Latitude:</strong> <span id="latitude">[LAT]</span>
+        </div>
+        <div class="alert-detail">
+            <strong>Longitude:</strong> <span id="longitude">[LONG]</span>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>This is an automated alert from your Vehicle IoT Monitoring System. Please take necessary action immediately.</p>
+        <p>If you have any questions, please contact support at support@vehicle-iot.com</p>
+    </div>
+
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([0, 0], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add marker
+        var marker = L.marker([0, 0]).addTo(map);
+
+        // Function to update map location
+        function updateMapLocation(lat, lng) {
+            map.setView([lat, lng], 13);
+            marker.setLatLng([lat, lng]);
+        }
+
+        // Update current time
+        document.getElementById('alertTime').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
