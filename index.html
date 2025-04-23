@@ -1499,26 +1499,26 @@
 
         // Function to fetch data from NodeMCU
         async function fetchData() {
-    const token = "eS5DxAjsnwDMyzoPqB96P0m3FOkpk8pR";
-    const baseUrl = `https://blynk.cloud/external/api/get?token=${token}`;
+    // const token = "eS5DxAjsnwDMyzoPqB96P0m3FOkpk8pR";
+    // const baseUrl = `https://blynk.cloud/external/api/get?token=${token}`;
 
     try {
-        const [battery, temperature, gas, fire, lat, lon] = await Promise.all([
-            fetch(`${baseUrl}&pin=V0`).then(res => res.text()),
-            fetch(`${baseUrl}&pin=V1`).then(res => res.text()),
-            fetch(`${baseUrl}&pin=V2`).then(res => res.text()),
-            fetch(`${baseUrl}&pin=V3`).then(res => res.text()),
-            fetch(`${baseUrl}&pin=V4`).then(res => res.text()),
-            fetch(`${baseUrl}&pin=V5`).then(res => res.text())
-        ]);
+        // const [battery, temperature, gas, fire, lat, lon] = await Promise.all([
+        //     fetch(`${baseUrl}&pin=V0`).then(res => res.text()),
+        //     fetch(`${baseUrl}&pin=V1`).then(res => res.text()),
+        //     fetch(`${baseUrl}&pin=V2`).then(res => res.text()),
+        //     fetch(`${baseUrl}&pin=V3`).then(res => res.text()),
+        //     fetch(`${baseUrl}&pin=V4`).then(res => res.text()),
+        //     fetch(`${baseUrl}&pin=V5`).then(res => res.text())
+        // ]);
 
         const data = {
-            battery: parseInt(battery),
-            temperature: parseFloat(temperature),
-            gasDetected: gas.trim() === "Gas Detected",
-            fireDetected: fire.trim() === "Flame Detected",
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon)
+            battery: 70,
+            temperature: 27,
+            gasDetected: true,
+            fireDetected: false,
+            latitude: 30.5,
+            longitude: 76.6
         };
 
         updateUI(data);
@@ -1580,6 +1580,8 @@
         
         // Function to send alert notification via POST request
         async function sendAlertNotification(data) {
+            console.log("Send Notifications ");
+            
             // The URL to your alert notification service
             const alertUrl = "https://send-chitkara.vercel.app/api/evCar";
             
@@ -1689,6 +1691,23 @@
         
         // Helper function to update element text with null check
         function updateElementText(id, text) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        // Helper function to update sensor status
+        function updateSensorStatus(id, text, className) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = text;
+                element.className = className;
+            }
+        }
+        
+        // Helper function to update sensor values
+        function updateSensorValue(id, text) {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = text;
