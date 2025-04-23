@@ -1,159 +1,338 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vehicle Alert Notification</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-red: #ff3b30;
+            --dark-bg: #121212;
+            --card-bg: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.6;
-            color: #ffffff;
-            max-width: 600px;
+            color: var(--text-primary);
+            max-width: 650px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #121212;
+            background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .alert-header {
-            background-color: #ff0000;
+            background: linear-gradient(135deg, var(--primary-red) 0%, #ff5e3a 100%);
             color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 5px;
+            box-shadow: 0 4px 20px rgba(255, 59, 48, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .alert-header h2 {
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .alert-header .logo {
+            font-size: 2rem;
         }
 
         .alert-info {
-            background-color: #1a1a1a;
-            border: 1px solid #ff0000;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .alert-detail {
-            margin: 10px 0;
-            color: #ffffff;
+            margin: 12px 0;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alert-detail-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .alert-detail-value {
+            font-weight: 600;
         }
 
         .map-container {
             height: 300px;
-            border: 1px solid #ff0000;
-            border-radius: 5px;
-            margin: 20px 0;
-            box-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: var(--border-radius);
+            margin: 20px 0 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         #map {
             height: 100%;
-            border-radius: 5px;
-            filter: grayscale(90%) invert(100%);
+            filter: grayscale(70%) invert(92%);
         }
 
         .footer {
-            font-size: 12px;
-            color: #cccccc;
-            margin-top: 20px;
-            border-top: 1px solid #ff0000;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            border-top: 1px solid rgba(255, 59, 48, 0.2);
             padding-top: 20px;
         }
 
         h3 {
-            color: #ff0000;
-            border-bottom: 1px solid #ff0000;
-            padding-bottom: 5px;
-        }
-
-        .alert-detail strong {
-            color: #ff0000;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 59, 48, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
         }
 
         .danger-alert {
-            background-color: rgba(255, 0, 0, 0.1);
-            border-left: 4px solid #ff0000;
-            padding: 10px;
-            margin: 5px 0;
-            animation: pulse 2s infinite;
+            background-color: rgba(255, 59, 48, 0.1);
+            border-left: 4px solid var(--primary-red);
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        .danger-alert-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .danger-alert-text {
+            flex-grow: 1;
+        }
+
+        .danger-alert-value {
+            font-weight: 700;
+            color: var(--primary-red);
+        }
+
+        .severity-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--primary-red);
+            display: inline-block;
+            margin-left: 10px;
+            box-shadow: 0 0 10px var(--primary-red);
+        }
+
+        .badge {
+            background-color: var(--primary-red);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .vehicle-id {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .vehicle-id-icon {
+            margin-right: 6px;
+        }
+
+        .coordinates {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .coordinate-box {
+            flex: 1;
+            min-width: 120px;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .coordinate-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .coordinate-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            
+            .alert-header h2 {
+                font-size: 1.2rem;
+            }
+            
+            .coordinate-box {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="alert-header">
-        <h2 style="margin: 0;">⚠️ Vehicle Alert Notification</h2>
-    </div>
+    <div class="container">
+        <div class="alert-header">
+            <h2><span class="logo">⚠️</span> Vehicle Alert Notification</h2>
+            <span class="badge">CRITICAL</span>
+        </div>
 
-    <div class="alert-info">
-        <div class="alert-detail">
-            <strong>Alert Type:</strong> <span id="alertType">Multiple Alerts Detected</span>
+        <div class="alert-info">
+            <div class="alert-detail">
+                <span class="alert-detail-label">Alert Type:</span>
+                <span class="alert-detail-value" id="alertType">Multiple Alerts Detected</span>
+            </div>
+            <div class="alert-detail">
+                <span class="alert-detail-label">Vehicle ID:</span>
+                <span class="vehicle-id"><span class="vehicle-id-icon">🚗</span> CAR-IOT-001</span>
+            </div>
+            <div class="alert-detail">
+                <span class="alert-detail-label">Time:</span>
+                <span class="alert-detail-value" id="alertTime">[TIME]</span>
+            </div>
         </div>
-        <div class="alert-detail">
-            <strong>Vehicle ID:</strong> CAR-IOT-001
-        </div>
-        <div class="alert-detail">
-            <strong>Time:</strong> <span id="alertTime">[TIME]</span>
-        </div>
-    </div>
 
-    <div class="alert-info">
-        <h3>Alert Details:</h3>
-        <div class="alert-detail danger-alert" id="temperatureAlert">
-            🌡️ High Temperature: <span id="tempValue">56</span>°C
+        <div class="alert-info">
+            <h3>Alert Details</h3>
+            <div class="danger-alert" id="temperatureAlert">
+                <div class="danger-alert-text">
+                    <span class="danger-alert-icon">🌡️</span>
+                    High Temperature
+                </div>
+                <span class="danger-alert-value"><span id="tempValue">56</span>°C</span>
+                <span class="severity-indicator"></span>
+            </div>
+            <div class="danger-alert" id="gasAlert">
+                <div class="danger-alert-text">
+                    <span class="danger-alert-icon">💨</span>
+                    Gas Leak Detected
+                </div>
+                <span class="severity-indicator"></span>
+            </div>
+            <div class="danger-alert" id="fireAlert">
+                <div class="danger-alert-text">
+                    <span class="danger-alert-icon">🔥</span>
+                    Fire Detected
+                </div>
+                <span class="severity-indicator"></span>
+            </div>
         </div>
-        <div class="alert-detail danger-alert" id="gasAlert">
-            💨 Gas Leak Detected
-        </div>
-        <div class="alert-detail danger-alert" id="fireAlert">
-            🔥 Fire Detected
-        </div>
-    </div>
 
-    <div class="alert-info">
-        <h3>Vehicle Location:</h3>
-        <div class="alert-detail">
-            <strong>Latitude:</strong> <span id="latitude">[LAT]</span>
+        <div class="alert-info">
+            <h3>Vehicle Location</h3>
+            <div class="coordinates">
+                <div class="coordinate-box">
+                    <div class="coordinate-label">Latitude</div>
+                    <div class="coordinate-value" id="latitude">[LAT]</div>
+                </div>
+                <div class="coordinate-box">
+                    <div class="coordinate-label">Longitude</div>
+                    <div class="coordinate-value" id="longitude">[LONG]</div>
+                </div>
+            </div>
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
         </div>
-        <div class="alert-detail">
-            <strong>Longitude:</strong> <span id="longitude">[LONG]</span>
-        </div>
-        <div class="map-container">
-            <div id="map"></div>
-        </div>
-    </div>
 
-    <div class="footer">
-        <p>This is an automated alert from your Vehicle IoT Monitoring System. Please take necessary action immediately.</p>
-        <p>If you have any questions, please contact support at support@vehicle-iot.com</p>
+        <div class="footer">
+            <p>This is an automated alert from your Vehicle IoT Monitoring System. Please take necessary action immediately.</p>
+            <p>If you have any questions, please contact support at support@vehicle-iot.com</p>
+        </div>
     </div>
 
     <script>
         // Initialize map
-        var map = L.map('map').setView([0, 0], 13);
+        var map = L.map('map').setView([37.7749, -122.4194], 13); // Default to San Francisco
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
         
         // Add marker
-        var marker = L.marker([0, 0]).addTo(map);
+        var marker = L.marker([37.7749, -122.4194]).addTo(map);
 
         // Function to update map location
         function updateMapLocation(lat, lng) {
             map.setView([lat, lng], 13);
             marker.setLatLng([lat, lng]);
+            document.getElementById('latitude').textContent = lat.toFixed(6);
+            document.getElementById('longitude').textContent = lng.toFixed(6);
         }
 
         // Update current time
         document.getElementById('alertTime').textContent = new Date().toLocaleString();
+        
+        // Simulate random location (for demo purposes)
+        // In a real application, you would get actual coordinates
+        const randomLat = (Math.random() * 0.1 + 37.7).toFixed(6);
+        const randomLng = (Math.random() * 0.1 - 122.4).toFixed(6);
+        
+        // Update the map with random location
+        updateMapLocation(parseFloat(randomLat), parseFloat(randomLng));
+        
+        // Add some interactivity
+        const alertElements = document.querySelectorAll('.danger-alert');
+        alertElements.forEach(alert => {
+            alert.addEventListener('mouseover', () => {
+                alert.style.cursor = 'pointer';
+            });
+        });
     </script>
 </body>
 </html>
