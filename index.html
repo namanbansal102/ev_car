@@ -1503,30 +1503,22 @@
     const baseUrl = `https://blynk.cloud/external/api`;
 
     try {
-        const isOnline = await fetch(`${baseUrl}/isHardwareConnected?token=${token}`)
-            .then(res => res.text());
-
-        if (isOnline.trim() !== "true") {
-            throw new Error("Device offline");
-        }
-
-        const [battery, temperature, gas, fire, lat, lon] = await Promise.all([
-            fetch(`${baseUrl}/get?token=${token}&pin=V0`).then(res => res.text()),
-            fetch(`${baseUrl}/get?token=${token}&pin=V1`).then(res => res.text()),
-            fetch(`${baseUrl}/get?token=${token}&pin=V2`).then(res => res.text()),
-            fetch(`${baseUrl}/get?token=${token}&pin=V3`).then(res => res.text()),
-            fetch(`${baseUrl}/get?token=${token}&pin=V4`).then(res => res.text()),
-            fetch(`${baseUrl}/get?token=${token}&pin=V5`).then(res => res.text())
-        ]);
-
+      let k=await fetch("https://send-chitkara.vercel.app/api/fetchData");
+      
+    //   let {battery,temperature,gasDetected,fireDetected,latitude,longitude}=await k.json();
+      let c=await k.json();
+      c=c.data
+      console.log(" is::",c);
         const data = {
-            battery: parseInt(battery),
-            temperature: parseFloat(temperature),
-            gasDetected: gas.trim().toLowerCase() === "gas detected",
-            fireDetected: fire.trim().toLowerCase() === "flame detected",
-            latitude: parseFloat(lat),
-            longitude: parseFloat(lon)
+            battery: c.battery,
+            temperature: parseFloat(c.temperature),
+            gasDetected: c.gasDetected,
+            fireDetected: c.fireDetected,
+            latitude: parseFloat(c.latitude),
+            longitude: parseFloat(c.longitude)
         };
+        console.log(data);
+        
         checkAlertConditions(data);
         updateUI(data);
 
@@ -1726,7 +1718,7 @@
         });
 
         // Periodically try to fetch data
-        setInterval(fetchData, 5000); // Try to fetch data every 5 seconds
+        setInterval(fetchData, 1000); // Try to fetch data every 5 seconds
         
         // Add glowing effect to sensor dots
         setInterval(() => {
