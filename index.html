@@ -1499,48 +1499,50 @@
 
         // Function to fetch data from NodeMCU
         async function fetchData() {
-    // const token = "eS5DxAjsnwDMyzoPqB96P0m3FOkpk8pR";
-    // const baseUrl = `https://blynk.cloud/external/api/get?token=${token}`;
+    const token = "XNxHp20y-nf3V9LGn4__qdDJlBYfokd2";
+    const baseUrl = `https://blynk.cloud/external/api`;
 
     try {
-        // const [battery, temperature, gas, fire, lat, lon] = await Promise.all([
-        //     fetch(`${baseUrl}&pin=V0`).then(res => res.text()),
-        //     fetch(`${baseUrl}&pin=V1`).then(res => res.text()),
-        //     fetch(`${baseUrl}&pin=V2`).then(res => res.text()),
-        //     fetch(`${baseUrl}&pin=V3`).then(res => res.text()),
-        //     fetch(`${baseUrl}&pin=V4`).then(res => res.text()),
-        //     fetch(`${baseUrl}&pin=V5`).then(res => res.text())
-        // ]);
+        const isOnline = await fetch(`${baseUrl}/isHardwareConnected?token=${token}`)
+            .then(res => res.text());
+
+        if (isOnline.trim() !== "true") {
+            throw new Error("Device offline");
+        }
+
+        const [battery, temperature, gas, fire, lat, lon] = await Promise.all([
+            fetch(`${baseUrl}/get?token=${token}&pin=V0`).then(res => res.text()),
+            fetch(`${baseUrl}/get?token=${token}&pin=V1`).then(res => res.text()),
+            fetch(`${baseUrl}/get?token=${token}&pin=V2`).then(res => res.text()),
+            fetch(`${baseUrl}/get?token=${token}&pin=V3`).then(res => res.text()),
+            fetch(`${baseUrl}/get?token=${token}&pin=V4`).then(res => res.text()),
+            fetch(`${baseUrl}/get?token=${token}&pin=V5`).then(res => res.text())
+        ]);
 
         const data = {
-            battery: 70,
-            temperature: 27,
-            gasDetected: true,
-            fireDetected: false,
-            latitude: 30.5,
-            longitude: 76.6
+            battery: parseInt(battery),
+            temperature: parseFloat(temperature),
+            gasDetected: gas.trim().toLowerCase() === "gas detected",
+            fireDetected: fire.trim().toLowerCase() === "flame detected",
+            latitude: parseFloat(lat),
+            longitude: parseFloat(lon)
         };
-
+        checkAlertConditions(data);
         updateUI(data);
 
-        // Check for alert conditions and send email notification if needed
-        checkAlertConditions(data);
-
-        // Reset offline status
         document.querySelectorAll('.offline-indicator').forEach(el => {
             if (el) el.style.display = 'none';
         });
 
-        const bodyElement = document.body;
-        if (bodyElement) bodyElement.classList.remove('offline-mode');
+        document.body.classList.remove('offline-mode');
 
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.warn('Device offline or error fetching:', error);
 
         const connectionStatus = document.getElementById('connection-status');
         if (connectionStatus) {
             connectionStatus.className = 'connection-status bg-red-900 text-red-300';
-            connectionStatus.innerHTML = '<span class="connection-dot bg-red-300"></span>Connection Error';
+            connectionStatus.innerHTML = '<span class="connection-dot bg-red-300"></span>Offline';
         }
 
         showOfflineStatus();
